@@ -9,7 +9,7 @@
         "clangd.arguments": [
             "--header-insertion=never",
             "--compile-commands-dir=${workspaceFolder}/build/CtrBoard-H7_ALL", 
-            "--query-driver=C:/App/Keil_v5/ARM/ARMCC/bin/*"
+            "--query-driver=C:/Keil_v5/ARM/ARMCC/bin/*"
         ],
         "files.autoGuessEncoding": true,
         "C_Cpp.default.configurationProvider": "cl.eide",

@@ -52,6 +52,10 @@ CompileFlags:
     - -D"__OPTIMISE_LEVEL=2"
     - -I"D:\Applications\Keil_v5\ARM\ARMCC\include"
     - -I"D:\Applications\Keil_v5\ARM\ARMCC\include\rw"
+    - -I"C:\Keil_v5\ARM\ARMCC\include"
+    - -I"C:\Keil_v5\ARM\ARMCC\include\rw"
+    - -D"__ARMCC_VERSION=5060960"
+    - -D"__TARGET_FEATURE_DMB=1"
   Remove: []
   CompilationDatabase: ./build/CtrBoard-H7_ALL
 Diagnostics:
