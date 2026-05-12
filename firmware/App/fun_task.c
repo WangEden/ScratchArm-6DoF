@@ -388,6 +388,133 @@ static void motor_init_all(void)
     }
 }
 
+/* ======================== Test ======================== */
+
+static void smooth_zero_test(void)
+{
+    const float kp = 1.0f;
+    const float kd = 0.5f;
+    const float vel_limit = 2.0f;
+    const float threshold = 0.05f;
+    const uint32_t settle_ms = 3000;
+
+    // 使能
+    for (uint8_t id = 1; id <= 4; id++)
+    {
+        dm_motor_enable(&hfdcan1, &motor[id - 1]);
+        osDelay(100);
+    }
+    osDelay(1000);
+
+    /* set target=0, let motor PD handle the motion */
+    for (uint8_t id = 1; id <= 4; id++)
+        motor_set_mit(id, 0.0f, vel_limit, kp, kd, 0.0f);
+
+    uint32_t elapsed = 0;
+    while (elapsed < settle_ms)
+    {
+        for (uint8_t id = 1; id <= 4; id++)
+        {
+            if (motor[id - 1].ctrl.mode != 0)
+                dm_motor_ctrl_send(&hfdcan1, &motor[id - 1]);
+        }
+        osDelay(MOTOR_CTRL_PERIOD);
+        elapsed += MOTOR_CTRL_PERIOD;
+    }
+}
+
+/* mode 0: set-target-once, motor PD handles smooth tracking */
+static void control_test_direct(void)
+{
+    const float kp = 1.0f;
+    const float kd = 0.5f;
+    const float vel_limit = 2.0f;
+    const float waypoints[] = {
+        -3.1415f, 0.0f, 3.1415f, 0.0f
+    };
+    const uint32_t move_ms  = 4000;
+    const uint32_t pause_ms = 1000;
+
+    // for (uint8_t id = 1; id <= 4; id++)
+    // {
+    //     dm_motor_enable(&hfdcan1, &motor[id - 1]);
+    //     osDelay(100);
+    // }
+    // osDelay(2000);
+
+    for (;;)
+    {
+        for (int p = 0; p < 4; p++)
+        {
+            for (uint8_t id = 1; id <= 4; id++)
+                motor_set_mit(id, waypoints[p], vel_limit, kp, kd, 0.0f);
+
+            uint32_t elapsed = 0;
+            while (elapsed < move_ms)
+            {
+                for (uint8_t id = 1; id <= 4; id++)
+                {
+                    if (motor[id - 1].ctrl.mode != 0)
+                        dm_motor_ctrl_send(&hfdcan1, &motor[id - 1]);
+                }
+                osDelay(MOTOR_CTRL_PERIOD);
+                elapsed += MOTOR_CTRL_PERIOD;
+            }
+        }
+        osDelay(pause_ms);
+    }
+}
+
+/* mode 1: linear position interpolation */
+static void control_test_interp(void)
+{
+    const float kp = 5.0f;
+    const float kd = 0.5f;
+    const float waypoints[] = {-3.1415f, 3.1415f, 0.0f};
+    const uint32_t ramp_ms  = 3000;
+    const uint32_t pause_ms = 1000;
+
+    // for (uint8_t id = 1; id <= 4; id++)
+    // {
+    //     dm_motor_enable(&hfdcan1, &motor[id - 1]);
+    //     osDelay(100);
+    // }
+    // osDelay(2000);
+
+    for (;;)
+    {
+        for (int p = 0; p < 3; p++)
+        {
+            float start_pos = (p == 0) ? 0.0f : waypoints[p - 1];
+            float end_pos   = waypoints[p];
+            uint32_t elapsed = 0;
+
+            while (elapsed < ramp_ms)
+            {
+                float t = (float)elapsed / (float)ramp_ms;
+                float pos = start_pos + (end_pos - start_pos) * t;
+
+                for (uint8_t id = 1; id <= 4; id++)
+                {
+                    motor_set_mit(id, pos, 0.0f, kp, kd, 0.0f);
+                    dm_motor_ctrl_send(&hfdcan1, &motor[id - 1]);
+                }
+                osDelay(MOTOR_CTRL_PERIOD);
+                elapsed += MOTOR_CTRL_PERIOD;
+            }
+        }
+        osDelay(pause_ms);
+    }
+}
+
+static void control_test(uint8_t mode)
+{
+    if (mode == 0)
+        control_test_direct();
+    else
+        control_test_interp();
+}
+
 /* ======================== Task Entry ======================== */
 
 void FunTask_Entry(void const *argument)
@@ -402,6 +529,10 @@ void FunTask_Entry(void const *argument)
     /* Start UART1 DMA idle-line receive */
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buf, UART_RX_BUF_SIZE);
 
+    smooth_zero_test();
+    osDelay(500);
+    control_test(0);
+#if 0
     for (;;)
     {
         /* ---- Process UART commands ---- */
@@ -422,6 +553,7 @@ void FunTask_Entry(void const *argument)
 
         osDelay(MOTOR_CTRL_PERIOD);
     }
+#endif
 }
 
 /* ======================== UART DMA Callback ======================== */

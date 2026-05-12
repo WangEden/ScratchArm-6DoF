@@ -87,7 +87,7 @@ uint8_t can_send_req_flag = 0; // 发送CAN数据请求标志位，volatile防�
 uint8_t can_data_buffer[RX_LEN]; // CAN接收数据缓冲区，存储STM32接收到的数据
 extern uint8_t rx_data1[8]; // CAN1接收数据缓冲区，存储STM32接收到的数据
 uint8_t last_can_rx_data1[8] = {0};
-uint16_t uart1_rx_size = 0;
+// uint16_t uart1_rx_size = 0;
 uint8_t pos_code = 0;
 // **********************************缓冲区定义**********************************
 /* USER CODE END PV */
