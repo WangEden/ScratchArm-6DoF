@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "bsp_fdcan.h"
-#include "dm_motor_ctrl.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -234,13 +233,6 @@ int8_t OSPI_W25Qxx_Test(void)		//Flash读写测试
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
-	if (htim->Instance == TIM3) {
-		
-		read_all_motor_data(&motor[Motor1]);
-		
-		if(motor[Motor1].tmp.read_flag == 0)
-			dm_motor_ctrl_send(&hfdcan1, &motor[Motor1]);
-	}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM23) {
     HAL_IncTick();
@@ -300,139 +292,26 @@ int main(void)
   /* USER CODE BEGIN 2 */
 //    OSPI_W25Qxx_Init();     // 初始化OSPI和W25Q64
 //    OSPI_W25Qxx_Test();     // Flash读写测试
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, RX_LEN); //启动DMA接收串口信息
-  
-  HAL_GPIO_WritePin(GPIOC, POWER_24V_1_Pin, GPIO_PIN_SET); // CAN模块24V电源使能
-	HAL_Delay(1000); // 延时1秒，等待电源稳定
-  RESPONSE_OK(power_ok);
-
-	bsp_fdcan_set_baud(&hfdcan1, CAN_CLASS, CAN_BR_1M);
-
-  bsp_can_init();
-	dm_motor_init();
-	motor[Motor1].ctrl.mode 	= mit_mode;
-
-	write_motor_data(motor[Motor1].id, 10, mit_mode, 0, 0, 0);
-	HAL_Delay(100);
-
-	read_motor_data(motor[Motor1].id, RID_CAN_BR); 
-
-	dm_motor_disable(&hfdcan1, &motor[Motor1]);
-	HAL_Delay(100);
-
-	save_motor_data(motor[Motor1].id, 10);
-	HAL_Delay(100);
-
-	dm_motor_enable(&hfdcan1, &motor[Motor1]);
-	HAL_Delay(1000);
-
-  motor[Motor1].ctrl.kp_set   = 1.0f;  // 位置比例系数
-  motor[Motor1].ctrl.kd_set   = 0.5f;  // 速度比例系数
-  motor[Motor1].ctrl.pos_set  = 0.0f;
-	HAL_Delay(100);
-
-	HAL_TIM_Base_Start_IT(&htim3);
-
-  // printf("NewProj HSE_VALUE Macro: %d\r\n", HSE_VALUE);
+  /* Power on 24V for CAN transceivers */
+  HAL_GPIO_WritePin(GPIOC, POWER_24V_1_Pin, GPIO_PIN_SET);
+  HAL_Delay(1000);
 
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
-  // MX_FREERTOS_Init(); // RTOS初始化
+  MX_FREERTOS_Init();
 
   /* Start scheduler */
-  // osKernelStart(); // RTOS内核启动函数
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  vofa_start();
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if (can_send_req_flag == 0)
-    {
-      // printf("Live...\r\n");
-      if (pos_code == 0) motor[Motor1].ctrl.pos_set += 1.5708f;
-      else if (pos_code == 1) motor[Motor1].ctrl.pos_set -= 1.5708f;
-
-      if (motor[Motor1].ctrl.pos_set >= 6.2832f) {
-          pos_code = 1;
-      } else if (motor[Motor1].ctrl.pos_set <= 0.0f) {
-          pos_code = 0;
-      }
-      HAL_Delay(2000);
-    }
-    else if (can_send_req_flag == 1) // 从串口接收到数据，通过CAN转发出去（弃用）
-    {
-      /*
-        can_data_buffer  数据格式为：
-        前 3 个字节："CAN"标识，0x43 0x41 0x4E 
-        第 4 个字节：电机ID，0x01~0x06
-        后 8 个字节：MIT模式CAN数据，0x7F 0xFF 0x7F 0xF0 0x00 0x00 0x07 0xFF
-      */
-      uint16_t motor_id = (uint16_t)can_data_buffer[3]; // 电机ID
-      if (motor_id < 1 || motor_id > 6) // ID是否合法
-      {
-        can_send_req_flag = 0; // 清除CAN数据标志位
-        memset(can_data_buffer, 0, RX_LEN); // 清空数据缓冲区，准备下一次接收
-        HAL_Delay(10); // 延时等待
-      }
-      else 
-      {
-        for (uint8_t i = 0; i < 8; i++)
-          can1_tx_data[i] = can_data_buffer[i + 4];
-        // canx_send_data(&hfdcan1, motor_id, can1_tx_data, 8); // 通过CAN转发出去
-        can_send_req_flag = 0; // 清除CAN数据标志位
-        memset(can_data_buffer, 0, RX_LEN); // 清空数据缓冲区，准备下一次接收
-			  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, RX_LEN); //启动DMA接收串口信息
-        HAL_Delay(10); // 延时等待
-      }
-    }
-    else if (can_send_req_flag == 2)
-    {
-      // 从CAN1接收到数据，通过串口转发出去
-      if (memcmp(rx_data1, last_can_rx_data1, 8) != 0) // 数据不重复
-      {
-        memcpy(last_can_rx_data1, rx_data1, 8); // 保存最新接收到的数据
-        memset(tx_temp_buffer, 0, RX_LEN); // 清空缓冲区
-        memcpy(tx_temp_buffer, rx_data1, 8);
-        tx_temp_buffer[8] = '\r';
-        tx_temp_buffer[9] = '\r';
-        HAL_UART_Transmit(&huart1, tx_temp_buffer, 10, 100); 
-      }
-      else 
-      {
-        can_send_req_flag = 0; // 清除CAN数据标志位
-        memset(can_data_buffer, 0, RX_LEN); // 清空数据缓冲区，准备下一次接收
-      }
-			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, RX_LEN); //启动DMA接收串口信息
-      HAL_Delay(10); // 延时等待
-      
-    }
-    else if (can_send_req_flag == 3)
-    {
-      prefix_len = strlen(prefix);
-			if (uart1_rx_size > (RX_LEN - prefix_len - 2)) // 防止溢出，保证最多接收96字节数据
-      {
-        uart1_rx_size = RX_LEN - prefix_len - 2; 
-      }
-			memset(tx_temp_buffer, 0, RX_LEN); // 清空缓冲区
-			memcpy(tx_temp_buffer, prefix, prefix_len); // 复制前缀
-      memcpy(tx_temp_buffer + prefix_len, rx_buffer, uart1_rx_size); // 复制接收到的数据到缓冲区
-      tx_temp_buffer[prefix_len + uart1_rx_size] = '\r'; // 添加回车符
-			tx_temp_buffer[uart1_rx_size + prefix_len + 1] = 0; // 确保字符串以0结尾
-			HAL_UART_Transmit(&huart1, tx_temp_buffer, uart1_rx_size + prefix_len + 2, 100); // 原样发送数据
-      can_send_req_flag = 0; // 清除CAN数据标志位
-      uart1_rx_size = 0;
-			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, RX_LEN); //启动DMA接收串口信息
-      HAL_Delay(10); // 延时等待
-			// printf("Recv: %s\r", tx_temp_buffer); // 原样输出接收到的数据，printf可能会影响实时性
-    }
-
   }
   /* USER CODE END 3 */
 }
@@ -500,37 +379,7 @@ void SystemClock_Config(void)
   HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_1);
 }
 
-/* USER CODE BEGIN 4 */
-// 串口接收完成回调
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-{
-	if (huart->Instance == USART1)
-	{
-		SCB_InvalidateDCache_by_Addr((uint32_t *)rx_buffer, RX_LEN); // 使能从RAM读取数据刷新Cache
-		if (strncmp((char *)rx_buffer, "CMD", 3) == 0) // 接收到的数据为 CMD 开头则不转发
-		{
-      // RESPONSE_OK(cmd_ok);
 
-			// HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, RX_LEN); //启动DMA接收串口信息
-      can_send_req_flag = 2;
-		}
-    else if (strncmp((char *)rx_buffer, "CAN", 3) == 0) // 接收到的数据为 CAN 开头则将信息转发CAN1
-    {
-      // RESPONSE_OK(can_ok);
-
-      if (Size > RX_LEN) Size = RX_LEN;
-      memcpy(can_data_buffer, rx_buffer, RX_LEN);
-			// HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, Size); //启动DMA接收串口信息
-      can_send_req_flag = 1; // 设置CAN数据标志位
-    }
-		else // 其他情况为串口回显
-		{
-			// HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, RX_LEN); //启动DMA接收串口信息
-      uart1_rx_size = Size;
-      can_send_req_flag = 3;
-		}
-	}
-}
 
 /* USER CODE END 4 */
 

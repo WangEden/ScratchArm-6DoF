@@ -129,7 +129,7 @@ virtualFolder:
         - path: App/key_task.c
         - path: App/lcd_task.c
         - path: App/imu_task.c
-        - path: App/fun_test_task.c
+        - path: App/fun_task.c
       folders: []
     - name: Algprithm
       files:

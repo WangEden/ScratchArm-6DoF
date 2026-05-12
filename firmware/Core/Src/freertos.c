@@ -57,9 +57,9 @@ osStaticThreadDef_t LcdTaskControlBlock;
 osThreadId ImuTaskHandle;
 uint32_t ImuTaskBuffer[ 1024 ];
 osStaticThreadDef_t ImuTaskControlBlock;
-osThreadId FunTestHandle;
-uint32_t FunTestBuffer[ 128 ];
-osStaticThreadDef_t FunTestControlBlock;
+osThreadId FunTaskHandle;
+uint32_t FunTaskBuffer[ 512 ];
+osStaticThreadDef_t FunTaskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -70,7 +70,7 @@ void StartDefaultTask(void const * argument);
 void KeyTask_Entry(void const * argument);
 void LcdTask_Entry(void const * argument);
 void ImuTask_Entry(void const * argument);
-void FunTest_Entry(void const * argument);
+void FunTask_Entry(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -150,9 +150,9 @@ void MX_FREERTOS_Init(void) {
   osThreadStaticDef(ImuTask, ImuTask_Entry, osPriorityHigh, 0, 1024, ImuTaskBuffer, &ImuTaskControlBlock);
   ImuTaskHandle = osThreadCreate(osThread(ImuTask), NULL);
 
-  /* definition and creation of FunTest */
-  osThreadStaticDef(FunTest, FunTest_Entry, osPriorityBelowNormal, 0, 128, FunTestBuffer, &FunTestControlBlock);
-  FunTestHandle = osThreadCreate(osThread(FunTest), NULL);
+  /* definition and creation of FunTask */
+  osThreadStaticDef(FunTask, FunTask_Entry, osPriorityBelowNormal, 0, 512, FunTaskBuffer, &FunTaskControlBlock);
+  FunTaskHandle = osThreadCreate(osThread(FunTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -234,22 +234,22 @@ __weak void ImuTask_Entry(void const * argument)
   /* USER CODE END ImuTask_Entry */
 }
 
-/* USER CODE BEGIN Header_FunTest_Entry */
+/* USER CODE BEGIN Header_FunTask_Entry */
 /**
-* @brief Function implementing the FunTest thread.
+* @brief Function implementing the FunTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_FunTest_Entry */
-__weak void FunTest_Entry(void const * argument)
+/* USER CODE END Header_FunTask_Entry */
+__weak void FunTask_Entry(void const * argument)
 {
-  /* USER CODE BEGIN FunTest_Entry */
+  /* USER CODE BEGIN FunTask_Entry */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END FunTest_Entry */
+  /* USER CODE END FunTask_Entry */
 }
 
 /* Private application code --------------------------------------------------*/

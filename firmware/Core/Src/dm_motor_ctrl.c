@@ -17,28 +17,16 @@ motor_t motor[num];
 **/
 void dm_motor_init(void)
 {
-	// 初始化Motor1和Motor2的电机结构
-	memset(&motor[Motor1], 0, sizeof(motor[Motor1]));
-	memset(&motor[Motor2], 0, sizeof(motor[Motor2]));
-	memset(&motor[Motor3], 0, sizeof(motor[Motor3]));
-	memset(&motor[Motor4], 0, sizeof(motor[Motor4]));
-	memset(&motor[Motor5], 0, sizeof(motor[Motor5]));
-	memset(&motor[Motor6], 0, sizeof(motor[Motor6]));
-
-	// 设置Motor1的电机信息
-	motor[Motor1].id = 0x01;
-	motor[Motor1].mst_id = 0x00;	// 实际没有用上，只做标识作用
-	motor[Motor1].tmp.read_flag = 1;
-	motor[Motor1].ctrl.mode 	= mit_mode;
-	motor[Motor1].ctrl.vel_set 	= 0.0f;
-	motor[Motor1].ctrl.pos_set 	= 1.5708f;
-	motor[Motor1].ctrl.tor_set 	= 0.0f;
-	motor[Motor1].ctrl.cur_set 	= 0.02f;
-	motor[Motor1].ctrl.kp_set 	= 1.0f;
-	motor[Motor1].ctrl.kd_set 	= 0.5f;
-	motor[Motor1].tmp.PMAX		= 12.5f;
-	motor[Motor1].tmp.VMAX		= 30.0f;
-	motor[Motor1].tmp.TMAX		= 10.0f;
+	for (uint8_t i = 0; i < 6; i++)
+	{
+		memset(&motor[i], 0, sizeof(motor[i]));
+		motor[i].id     = i + 1;   /* CAN Slave ID: 0x01 ~ 0x06 */
+		motor[i].mst_id = 0x00;
+		motor[i].tmp.read_flag = 1;
+		motor[i].tmp.PMAX = 12.5f;
+		motor[i].tmp.VMAX = 30.0f;
+		motor[i].tmp.TMAX = 10.0f;
+	}
 }
 /**
 ************************************************************************
@@ -188,9 +176,12 @@ void fdcan1_rx_callback(void)
 	uint16_t rec_id;
 	uint8_t rx_data[8] = {0};
 	fdcanx_receive(&hfdcan1, &rec_id, rx_data);
-	switch (rec_id)
-	{
- 		case 0x00: dm_motor_fbdata(&motor[Motor1], rx_data); receive_motor_data(&motor[Motor1], rx_data); break;
+	/* Route by motor ID embedded in data[0] lower 4 bits */
+	uint8_t mid = rx_data[0] & 0x0F;
+	if (mid >= 1 && mid <= 6) {
+		uint8_t idx = mid - 1;
+		dm_motor_fbdata(&motor[idx], rx_data);
+		receive_motor_data(&motor[idx], rx_data);
 	}
 }
 
