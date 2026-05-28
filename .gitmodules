@@ -3,4 +3,4 @@
 	url = https://github.com/WangEden/ScratchArm-6DoF-Model.git
 [submodule "simulate"]
 	path = simulate
-	url = https://github.com/WangEden/Arm-6Dof-Sim
+	url = https://github.com/WangEden/Arm-6Dof-Sim.git
