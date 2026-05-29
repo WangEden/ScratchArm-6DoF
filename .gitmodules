@@ -4,3 +4,4 @@
 [submodule "simulate"]
 	path = simulate
 	url = https://github.com/WangEden/Arm-6Dof-Sim.git
+	branch = dev
