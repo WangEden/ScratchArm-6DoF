@@ -13,7 +13,7 @@ virtualFolder:
       folders:
         - name: MDK-ARM
           files:
-            - path: MDK-ARM/startup_stm32h723xx_keil.s
+            - path: GCC/startup_stm32h723xx.s
           folders: []
         - name: User
           files: []
@@ -103,7 +103,7 @@ virtualFolder:
             - path: Middlewares/Third_Party/FreeRTOS/Source/timers.c
             - path: Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c
             - path: Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
-            - path: Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/port.c
+            - path: Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
           folders: []
         - name: USB_Device_Library
           files:
@@ -159,7 +159,7 @@ targets:
         - Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
         - Middlewares/Third_Party/FreeRTOS/Source/include
         - Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS
-        - Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F
+        - Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
         - Middlewares/ST/STM32_USB_Device_Library/Core/Inc
         - Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
         - Drivers/CMSIS/Device/ST/STM32H7xx/Include
@@ -174,7 +174,7 @@ targets:
     excludeList: []
     settings:
       debugger: cortex-debug
-    toolchain: AC5
+    toolchain: GCC
     toolchainConfigMap:
       AC5:
         archExtensions: ""
@@ -277,6 +277,86 @@ targets:
                 startAddr: "0x0"
               tag: IROM
         useCustomScatterFile: false
+      AC6:
+        archExtensions: ""
+        cpuType: Cortex-M7
+        floatingPointHardware: double
+        options:
+          version: 3
+          afterBuildTasks: []
+          asm-compiler:
+            $use: asm-auto
+            misc-controls: ""
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            language-c: c99
+            language-cpp: c++11
+            link-time-optimization: false
+            optimization: level-0
+          global:
+            output-debug-info: enable
+            use-microLIB: false
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            misc-controls: --diag_suppress=L6329
+            output-format: elf
+        scatterFilePath: <YOUR_SCATTER_FILE>.sct
+        storageLayout:
+          RAM:
+            - id: 1
+              isChecked: true
+              mem:
+                size: "0x5000"
+                startAddr: "0x20000000"
+              noInit: false
+              tag: IRAM
+          ROM:
+            - id: 1
+              isChecked: true
+              isStartup: true
+              mem:
+                size: "0x10000"
+                startAddr: "0x08000000"
+              tag: IROM
+        useCustomScatterFile: false
+      GCC:
+        archExtensions: ""
+        cpuType: Cortex-M7
+        floatingPointHardware: double
+        options:
+          version: 5
+          afterBuildTasks: []
+          asm-compiler:
+            ASM_FLAGS: ""
+          beforeBuildTasks: []
+          c/cpp-compiler:
+            CXX_FLAGS: ""
+            C_FLAGS: ""
+            language-c: c11
+            language-cpp: c++11
+            one-elf-section-per-data: true
+            one-elf-section-per-function: true
+            optimization: level-debug
+            warnings: all-warnings
+          global:
+            $float-abi-type: hard
+            misc-control: ""
+            not-use-syscalls: true
+            output-debug-info: enable
+            use-newlib-nano: true
+          linker:
+            $outputTaskExcludes:
+              - .bin
+            LD_FLAGS: ""
+            LIB_FLAGS: -lm
+            output-format: elf
+            remove-unused-input-sections: true
+        scatterFilePath: GCC/STM32H723ZGTX_FLASH.ld
+        storageLayout:
+          RAM: []
+          ROM: []
+        useCustomScatterFile: true
     uploadConfigMap:
       JLink:
         baseAddr: ""
@@ -288,9 +368,9 @@ targets:
         proType: 1
         speed: 8000
       STLink:
-        address: "0x8000000"
+        address: "0x08000000"
         bin: ""
-        elFile: None
+        elFile: build/CtrBoard-H7_ALL/CtrBoard-H7_ALL.elf
         optionBytes: .eide/ctrboard-h7_all.st.option.bytes.ini
         otherCmds: ""
         proType: SWD

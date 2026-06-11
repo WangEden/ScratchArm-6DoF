@@ -7,3 +7,5 @@
 # project out
 build
 -v
+
+.pack
