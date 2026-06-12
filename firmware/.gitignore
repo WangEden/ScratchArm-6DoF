@@ -3,9 +3,12 @@
 .settings
 .eide/log
 .eide.usr.ctx.json
+.claude
 
 # project out
 build
 -v
 
 .pack
+.clangd
+.DS_Store

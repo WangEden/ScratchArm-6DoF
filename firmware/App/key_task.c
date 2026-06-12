@@ -19,15 +19,12 @@ void KeyTask_Entry(void const * argument)
     /* Infinite loop */
     for(;;)
     {
-        if (BSP_UserKey_Detect() == BUTTON_PRESSED)
-        {
-            BSP_Buzzer_Toggle();
-        }
-        vbus = (adc_val[0]*3.3f/65535)*11.0f;
-        osDelay(10);
+        // if (BSP_UserKey_Detect() == BUTTON_PRESSED)
+        // {
+        //     BSP_Buzzer_Toggle();
+        // }
+        // vbus = (adc_val[0]*3.3f/65535)*11.0f;
+        osDelay(100);
     }
     /* USER CODE END KeyTask_Entry */
 }
-
-
-

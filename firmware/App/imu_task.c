@@ -55,35 +55,35 @@ void ImuTask_Entry(void const * argument)
 {
     /* USER CODE BEGIN ImuTask_Entry */
     osDelay(10);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-    while(BMI088_init())
-    {
-        osDelay(100);
-    }
+    // HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+    // while(BMI088_init())
+    // {
+    //     osDelay(100);
+    // }
     
-    AHRS_init(imuQuat);
+    // AHRS_init(imuQuat);
     /* Infinite loop */
     for(;;)
     {
-        BMI088_read(gyro, acc, &temp);
+        // BMI088_read(gyro, acc, &temp);
         
-        AHRS_update(imuQuat, gyro, acc);
-        GetAngle(imuQuat, imuAngle + INS_YAW_ADDRESS_OFFSET, imuAngle + INS_PITCH_ADDRESS_OFFSET, imuAngle + INS_ROLL_ADDRESS_OFFSET);
+        // AHRS_update(imuQuat, gyro, acc);
+        // GetAngle(imuQuat, imuAngle + INS_YAW_ADDRESS_OFFSET, imuAngle + INS_PITCH_ADDRESS_OFFSET, imuAngle + INS_ROLL_ADDRESS_OFFSET);
         
-        err_ll = err_l;
-        err_l = err;
-        err = DES_TEMP - temp;
-        out = KP*err + KI*(err + err_l + err_ll) + KD*(err - err_l);
-        if (out > MAX_OUT) out = MAX_OUT;
-        if (out < 0) out = 0.f;
-        htim3.Instance->CCR4 = (uint16_t)out;
+        // err_ll = err_l;
+        // err_l = err;
+        // err = DES_TEMP - temp;
+        // out = KP*err + KI*(err + err_l + err_ll) + KD*(err - err_l);
+        // if (out > MAX_OUT) out = MAX_OUT;
+        // if (out < 0) out = 0.f;
+        // htim3.Instance->CCR4 = (uint16_t)out;
         
-        vofa_send_data(0, imuAngle[0]);
-        vofa_send_data(1, imuAngle[1]);
-        vofa_send_data(2, imuAngle[2]);
-        vofa_sendframetail();
+        // vofa_send_data(0, imuAngle[0]);
+        // vofa_send_data(1, imuAngle[1]);
+        // vofa_send_data(2, imuAngle[2]);
+        // vofa_sendframetail();
         
-        osDelay(1);
+        osDelay(100);
     }
     /* USER CODE END ImuTask_Entry */
 }

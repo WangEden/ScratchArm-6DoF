@@ -57,9 +57,9 @@ osStaticThreadDef_t LcdTaskControlBlock;
 osThreadId ImuTaskHandle;
 uint32_t ImuTaskBuffer[ 1024 ];
 osStaticThreadDef_t ImuTaskControlBlock;
-osThreadId FunTaskHandle;
-uint32_t FunTaskBuffer[ 512 ];
-osStaticThreadDef_t FunTaskControlBlock;
+osThreadId MotorTaskHandle;
+uint32_t MotorTaskBuffer[ 512 ];
+osStaticThreadDef_t MotorTaskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -70,7 +70,7 @@ void StartDefaultTask(void const * argument);
 void KeyTask_Entry(void const * argument);
 void LcdTask_Entry(void const * argument);
 void ImuTask_Entry(void const * argument);
-void FunTask_Entry(void const * argument);
+void MotorTask_Entry(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -150,9 +150,9 @@ void MX_FREERTOS_Init(void) {
   osThreadStaticDef(ImuTask, ImuTask_Entry, osPriorityHigh, 0, 1024, ImuTaskBuffer, &ImuTaskControlBlock);
   ImuTaskHandle = osThreadCreate(osThread(ImuTask), NULL);
 
-  /* definition and creation of FunTask */
-  osThreadStaticDef(FunTask, FunTask_Entry, osPriorityBelowNormal, 0, 512, FunTaskBuffer, &FunTaskControlBlock);
-  FunTaskHandle = osThreadCreate(osThread(FunTask), NULL);
+  /* definition and creation of MotorTask */
+  osThreadStaticDef(MotorTask, MotorTask_Entry, osPriorityRealtime, 0, 512, MotorTaskBuffer, &MotorTaskControlBlock);
+  MotorTaskHandle = osThreadCreate(osThread(MotorTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -234,22 +234,22 @@ __weak void ImuTask_Entry(void const * argument)
   /* USER CODE END ImuTask_Entry */
 }
 
-/* USER CODE BEGIN Header_FunTask_Entry */
+/* USER CODE BEGIN Header_MotorTask_Entry */
 /**
-* @brief Function implementing the FunTask thread.
+* @brief Function implementing the MotorTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_FunTask_Entry */
-__weak void FunTask_Entry(void const * argument)
+/* USER CODE END Header_MotorTask_Entry */
+__weak void MotorTask_Entry(void const * argument)
 {
-  /* USER CODE BEGIN FunTask_Entry */
+  /* USER CODE BEGIN MotorTask_Entry */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END FunTask_Entry */
+  /* USER CODE END MotorTask_Entry */
 }
 
 /* Private application code --------------------------------------------------*/

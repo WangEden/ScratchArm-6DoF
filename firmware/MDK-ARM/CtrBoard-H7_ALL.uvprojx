@@ -1241,9 +1241,9 @@
               <FilePath>..\App\imu_task.c</FilePath>
             </File>
             <File>
-              <FileName>fun_test_task.c</FileName>
+              <FileName>motor_task.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\App\fun_test_task.c</FilePath>
+              <FilePath>..\App\motor_task.c</FilePath>
             </File>
           </Files>
         </Group>

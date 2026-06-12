@@ -1,5 +1,5 @@
-#ifndef __FUN_TASK_H__
-#define __FUN_TASK_H__
+#ifndef __MOTOR_TASK_H__
+#define __MOTOR_TASK_H__
 
 #include "cmsis_os.h"
 
@@ -43,6 +43,6 @@
 #define MOTOR_COUNT        6
 #define MOTOR_CTRL_PERIOD  5     /* ms, 200Hz control loop */
 
-void FunTask_Entry(void const *argument);
+void MotorTask_Entry(void const *argument);
 
-#endif /* __FUN_TASK_H__ */
+#endif /* __MOTOR_TASK_H__ */

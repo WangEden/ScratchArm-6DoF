@@ -1,10 +1,12 @@
-#include "fun_task.h"
+#include "motor_task.h"
 #include "usart.h"
 #include "main.h"
 #include "fdcan.h"
 #include "bsp_fdcan.h"
 #include "dm_motor_ctrl.h"
 #include "dm_motor_drv.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <string.h>
 
 /* ======================== UART Buffers ======================== */
@@ -410,8 +412,8 @@ static void smooth_zero_test(void)
     for (uint8_t id = 1; id <= 4; id++)
         motor_set_mit(id, 0.0f, vel_limit, kp, kd, 0.0f);
 
-    uint32_t elapsed = 0;
-    while (elapsed < settle_ms)
+    TickType_t start = xTaskGetTickCount();
+    while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(settle_ms))
     {
         for (uint8_t id = 1; id <= 4; id++)
         {
@@ -419,7 +421,6 @@ static void smooth_zero_test(void)
                 dm_motor_ctrl_send(&hfdcan1, &motor[id - 1]);
         }
         osDelay(MOTOR_CTRL_PERIOD);
-        elapsed += MOTOR_CTRL_PERIOD;
     }
 }
 
@@ -449,8 +450,8 @@ static void control_test_direct(void)
             for (uint8_t id = 1; id <= 4; id++)
                 motor_set_mit(id, waypoints[p], vel_limit, kp, kd, 0.0f);
 
-            uint32_t elapsed = 0;
-            while (elapsed < move_ms)
+            TickType_t start = xTaskGetTickCount();
+            while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(move_ms))
             {
                 for (uint8_t id = 1; id <= 4; id++)
                 {
@@ -458,7 +459,6 @@ static void control_test_direct(void)
                         dm_motor_ctrl_send(&hfdcan1, &motor[id - 1]);
                 }
                 osDelay(MOTOR_CTRL_PERIOD);
-                elapsed += MOTOR_CTRL_PERIOD;
             }
         }
         osDelay(pause_ms);
@@ -487,11 +487,13 @@ static void control_test_interp(void)
         {
             float start_pos = (p == 0) ? 0.0f : waypoints[p - 1];
             float end_pos   = waypoints[p];
-            uint32_t elapsed = 0;
 
-            while (elapsed < ramp_ms)
+            TickType_t seg_start = xTaskGetTickCount();
+            uint32_t elapsed_ms = 0;
+
+            while (elapsed_ms < ramp_ms)
             {
-                float t = (float)elapsed / (float)ramp_ms;
+                float t = (float)elapsed_ms / (float)ramp_ms;
                 float pos = start_pos + (end_pos - start_pos) * t;
 
                 for (uint8_t id = 1; id <= 4; id++)
@@ -500,7 +502,7 @@ static void control_test_interp(void)
                     dm_motor_ctrl_send(&hfdcan1, &motor[id - 1]);
                 }
                 osDelay(MOTOR_CTRL_PERIOD);
-                elapsed += MOTOR_CTRL_PERIOD;
+                elapsed_ms = (uint32_t)(xTaskGetTickCount() - seg_start) * portTICK_PERIOD_MS;
             }
         }
         osDelay(pause_ms);
@@ -517,7 +519,7 @@ static void control_test(uint8_t mode)
 
 /* ======================== Task Entry ======================== */
 
-void FunTask_Entry(void const *argument)
+void MotorTask_Entry(void const *argument)
 {
     /* CAN: configure FDCAN1 for classic CAN 1Mbps */
     bsp_fdcan_set_baud(&hfdcan1, CAN_CLASS, CAN_BR_1M);
